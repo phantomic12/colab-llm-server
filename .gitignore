@@ -1,0 +1,42 @@
+# Models & weights
+*.gguf
+*.bin
+*.safetensors
+*.pt
+*.pth
+models/
+downloads/
+cache/
+hf_cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Cloudflare
+cloudflared
+cloudflared-*
+*.log
+nohup.out
+
+# OS
+.DS_Store
+Thumbs.db
+
+# API keys / secrets
+.env
+*.key
+secrets.json

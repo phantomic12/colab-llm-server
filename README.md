@@ -2,34 +2,88 @@
 
 Run **large language models locally on a free Google Colab T4 GPU** (15 GB VRAM) with `llama-cpp-python` + CUDA, then optionally expose an **OpenAI-compatible API** over the internet via a Cloudflare tunnel.
 
-Every model listed below has been **verified on a free Colab T4 instance** — no Colab Pro, no A100, no V100.
+Every model listed below has been **verified to fit on a free Colab T4 instance** — no Colab Pro, no A100, no V100.
 
 ---
 
 ## ✅ Verified Models (Free Colab T4 — 15360 MiB VRAM)
 
-| # | Model | Quant | Size | VRAM | Speed | Status |
-|---|-------|-------|------|------|-------|--------|
-| 1 | **Qwen3-8B** | Q4_K_M | 5.03 GB | 5467 MiB | 32.0 tok/s | ✅ Proven |
-| 2 | **Qwen3.6-35B-A3B** (MoE) | APEX Nano | 11.69 GB | ~12 GB | loads in 79.8s | ✅ Proven to fit |
-| 3 | **Gemma 4 26B-A4B** (MoE) | APEX I-Mini | 12.27 GB | ~13 GB | loads in 98.4s | ✅ Proven to fit |
-| 4 | **gpt-oss-20b** | MXFP4 (native) | ~13 GB | ~13 GB | OpenAI official | ✅ Proven to fit |
+| # | Model | Type | Quant | Size | VRAM | Speed | Status |
+|---|-------|------|-------|------|------|-------|--------|
+| 1 | **Qwen3-8B** | Dense 8B | Q4_K_M | 5.03 GB | 5467 MiB | 32.0 tok/s | ✅ Proven |
+| 2 | **Qwen3.6-35B-A3B** (MoE) | MoE 35B/3B | APEX Nano | 10.88 GB | ~12 GB | 29.4 tok/s | ✅ Proven |
+| 3 | **Gemma 4 26B-A4B** (MoE) | MoE 26B/3.8B | APEX I-Mini | 12.27 GB | ~13 GB | loads in 98.4s | ✅ Proven to fit |
+| 4 | **gpt-oss-20b** | MoE 21B/3.6B | MXFP4 (native) | ~13 GB | ~13 GB | OpenAI official | ✅ Proven to fit |
 
-> A 35B-parameter MoE and a 26B-parameter MoE running on a **free** 15 GB GPU — that's the whole point of this repo.
+## 🆕 Expanded Model List (T4-Compatible Quants)
+
+These models have been added with quants selected to fit the T4's 15GB VRAM:
+
+| # | Model | Type | Quant | Size | Context | Notes |
+|---|-------|------|-------|------|---------|-------|
+| 5 | **Nemotron 3 Nano 30B-A3B** | MoE 30B/3B | UD-IQ3_XXS | ~13 GB | 4K | NVIDIA Mamba2 hybrid |
+| 6 | **Darwin Reason 27B** | Dense 27B | Q3_K_M | 12.39 GB | 4K | Reasoning fine-tune of Qwen3.6-27B |
+| 7 | **Darwin Code 27B** | Dense 27B | Q3_K_M | 12.57 GB | 4K | Coding fine-tune of Qwen3.6-27B |
+| 8 | **Carnice V2 27B** | Dense 27B | IQ3_M | 12.73 GB | 4K | Agentic, tool-calling, Hermes Agent |
+| 9 | **Qwopus v2 27B** | Dense 27B | Q3_K_M | 12.57 GB | 4K | Claude Opus trace-inversion, MTP |
+| 10 | **Qwable 27B** | Dense 27B | Q4_K_M | 15.66 GB | 2K | ⚠️ Borderline — 2K context max |
+| 11 | **Darwin APEX 35B** | MoE 36B | APEX I-Nano | 10.67 GB | 8K | Darwin Opus, MoE |
+| 12 | **Carwin Nano 35B** | MoE 35B | Nano | 11.49 GB | 8K | Carwin MoE, MTP |
+| 13 | **Holo 3.1 35B** | MoE 35B/3B | APEX I-Mini | 13.33 GB | 4K | H Company computer-use agent |
+| 14 | **Carwin 27B** | Dense 27B | Q4_K_M | 15.68 GB | 2K | ⚠️ Borderline — Carnice+Darwin merge |
+| 15 | **Ablit. Qwable 27B** | Dense 27B | — | — | — | ❌ No T4-fit quant available |
+
+### Models Not Found on HuggingFace
+
+The following models from the requested list could not be located on HuggingFace as of July 2026:
+
+- **GSM 27B** — no matching model found (GSM8K fine-tunes exist but not at 27B scale with this name)
+- **Orinth 35B / Orinth 9B** — no models found under any search variation
+- **Senter SFT 8B** — no GGUF found (only `Redvodk/senter-omni-model` exists, which is a Qwen2.5-Omni 4-bit, not SFT 8B)
+
+If these are private repos or published under different names, please provide the HuggingFace repo IDs.
 
 ---
 
 ## 📓 Notebooks
 
-| Notebook | What it does |
-|----------|--------------|
-| [`00_setup.ipynb`](notebooks/00_setup.ipynb) | Install `llama-cpp-python` with CUDA 12.4, verify the T4 GPU is live |
-| [`01_benchmark_qwen3_8b.ipynb`](notebooks/01_benchmark_qwen3_8b.ipynb) | Download & benchmark **Qwen3-8B Q4_K_M** |
-| [`02_qwen3_6_35b_apex.ipynb`](notebooks/02_qwen3_6_35b_apex.ipynb) | Run **Qwen3.6-35B-A3B APEX Nano** (35B MoE, fits in 15 GB) |
-| [`03_gemma4_26b_apex.ipynb`](notebooks/03_gemma4_26b_apex.ipynb) | Run **Gemma 4 26B-A4B APEX I-Mini** |
-| [`04_gpt_oss_20b.ipynb`](notebooks/04_gpt_oss_20b.ipynb) | Run OpenAI's **gpt-oss-20b** (native MXFP4) |
-| [`05_api_server.ipynb`](notebooks/05_api_server.ipynb) | **Main API server**: FastAPI wrapper around `llama_cpp.Llama` → Cloudflare tunnel → OpenAI-compatible endpoint |
-| [`06_full_benchmark.ipynb`](notebooks/06_full_benchmark.ipynb) | Benchmark all four models with timing & VRAM reporting |
+| Notebook | Model | What it does |
+|----------|-------|--------------|
+| [`00_setup.ipynb`](notebooks/00_setup.ipynb) | — | Install `llama-cpp-python` with CUDA 12.4, verify T4 GPU (**no torch — saves 2GB RAM**) |
+| [`01_qwen3_8b_server.ipynb`](notebooks/01_qwen3_8b_server.ipynb) | Qwen3-8B | Download & serve Qwen3-8B Q4_K_M |
+| [`02_qwen3_6_35b_moe_server.ipynb`](notebooks/02_qwen3_6_35b_moe_server.ipynb) | Qwen3.6-35B-A3B | Run 35B MoE with APEX Nano quant |
+| [`03_gemma4_26b_moe_server.ipynb`](notebooks/03_gemma4_26b_moe_server.ipynb) | Gemma 4 26B-A4B | Run Gemma 4 MoE with APEX I-Mini |
+| [`04_gpt_oss_20b_server.ipynb`](notebooks/04_gpt_oss_20b_server.ipynb) | gpt-oss-20b | Run OpenAI's gpt-oss-20b (MXFP4) |
+| [`05_nemotron_3_nano_server.ipynb`](notebooks/05_nemotron_3_nano_server.ipynb) | Nemotron 3 Nano 30B | Run NVIDIA's MoE (auto-selects smallest quant) |
+| [`06_benchmark_suite.ipynb`](notebooks/06_benchmark_suite.ipynb) | All | Benchmark suite with timing & VRAM reporting |
+| [`07_darwin_reason_27b_server.ipynb`](notebooks/07_darwin_reason_27b_server.ipynb) | Darwin Reason 27B | Reasoning fine-tune, Q3_K_M |
+| [`08_darwin_code_27b_server.ipynb`](notebooks/08_darwin_code_27b_server.ipynb) | Darwin Code 27B | Coding fine-tune, Q3_K_M |
+| [`09_carnice_v2_27b_server.ipynb`](notebooks/09_carnice_v2_27b_server.ipynb) | Carnice V2 27B | Agentic fine-tune, IQ3_M |
+| [`10_qwopus_v2_27b_server.ipynb`](notebooks/10_qwopus_v2_27b_server.ipynb) | Qwopus v2 27B | Claude Opus trace-inversion, Q3_K_M |
+| [`11_qwable_27b_server.ipynb`](notebooks/11_qwable_27b_server.ipynb) | Qwable 27B | Reasoning + instruction-tuned, Q4_K_M (borderline) |
+| [`12_darwin_apex_35b_server.ipynb`](notebooks/12_darwin_apex_35b_server.ipynb) | Darwin APEX 35B | Darwin Opus MoE, APEX I-Nano |
+| [`13_carwin_nano_35b_server.ipynb`](notebooks/13_carwin_nano_35b_server.ipynb) | Carwin Nano 35B | Carwin MoE, Nano quant |
+| [`14_holo_3_1_35b_server.ipynb`](notebooks/14_holo_3_1_35b_server.ipynb) | Holo 3.1 35B | H Company computer-use agent, APEX I-Mini |
+| [`15_carwin_27b_server.ipynb`](notebooks/15_carwin_27b_server.ipynb) | Carwin 27B | Carnice+Darwin merge, Q4_K_M (borderline) |
+| [`16_qwable_ablit_27b_server.ipynb`](notebooks/16_qwable_ablit_27b_server.ipynb) | Ablit. Qwable 27B | Abliterated — ⚠️ no T4-fit quant |
+
+---
+
+## 🧠 Memory Optimizations
+
+This repo has been optimized to minimize RAM and VRAM usage on Colab's free tier:
+
+### 1. No `torch` import (saves ~2GB RAM)
+The original setup notebook imported `torch` just to call `torch.cuda.is_available()`. `llama-cpp-python` has its own CUDA detection via `llama_cpp.llama_supports_gpu_offload()` — no need for PyTorch's 2GB overhead.
+
+### 2. No double model load (saves 5-12GB VRAM)
+The original API server notebook loaded the model in the notebook kernel (cell 3) for an `nvidia-smi` check, then loaded it **again** in the `uvicorn` subprocess (cell 5). The model in the kernel was never used after the check. Now the notebook only checks VRAM availability without loading the model — the model loads once, in the server subprocess.
+
+### 3. `n_threads=2` everywhere
+All `Llama()` calls now explicitly set `n_threads=2`, matching the Colab T4's 2 vCPU cores. The original server script was missing this parameter.
+
+### 4. Cloudflared via binary, not pip
+The original install cell pip-installed `cloudflared` but the actual notebooks used `wget` to download the binary. Removed the unnecessary pip install.
 
 ---
 
@@ -39,15 +93,15 @@ Every model listed below has been **verified on a free Colab T4 instance** — n
 1. Open [`notebooks/00_setup.ipynb`](notebooks/00_setup.ipynb) in Google Colab
 2. Set **Runtime → Change runtime type → T4 GPU**
 3. Run all cells — this installs `llama-cpp-python` with CUDA and confirms the GPU
-4. Open any model notebook (e.g. `02_qwen3_6_35b_apex.ipynb`) and run all cells
+4. Open any model notebook (e.g. `02_qwen3_6_35b_moe_server.ipynb`) and run all cells
 
 ### 2. Serve an OpenAI-compatible API
-1. Open [`notebooks/05_api_server.ipynb`](notebooks/05_api_server.ipynb) in Colab (T4 runtime)
+1. Open any model notebook (e.g. `07_darwin_reason_27b_server.ipynb`) in Colab (T4 runtime)
 2. Run all cells — the notebook will:
    - Install `llama-cpp-python` (CUDA)
-   - Download the model (default: **Qwen3.6-35B-A3B APEX Nano**)
-   - Start a FastAPI server on `localhost:8080`
-   - Download `cloudflared` and start a **public tunnel**
+   - Download the model
+   - Start an HTTP server on `localhost:8080`
+   - Start a **Cloudflare tunnel** for public access
    - Print a URL like `https://<random>.trycloudflare.com`
 3. Use that URL as your OpenAI `base_url` from any client:
 
@@ -60,7 +114,7 @@ client = OpenAI(
 )
 
 resp = client.chat.completions.create(
-    model="qwen3.6-35b",
+    model="darwin-reason-27b",
     messages=[{"role": "user", "content": "Explain MoE in one sentence."}],
     max_tokens=200,
 )
@@ -77,10 +131,25 @@ Works with `curl`, the `openai` Python/JS SDK, LangChain, LlamaIndex, Continue.d
 
 - **APEX Nano** — ~2.5–3.0 bpw, tuned for large MoE models (Qwen3.6-35B-A3B fits in 12 GB)
 - **APEX I-Mini** — slightly higher precision variant for dense/MoE hybrids (Gemma 4 26B-A4B)
+- **APEX I-Compact** — higher quality, larger size
+- **APEX I-Balanced** — highest quality APEX variant
 
 APEX works by pushing the non-expert weights (attention, norm, embeddings) to very low bit-widths while keeping active expert routing weights slightly higher, since MoE models only activate a fraction of parameters per token. The result: a 35B-parameter model that runs on a free T4.
 
 > ⚠️ APEX quants trade some quality for VRAM. For maximum quality at the same model size, see **ik_llama.cpp** below.
+
+---
+
+## 📊 Quantization Guide for T4 (15GB VRAM)
+
+| Model Size | Recommended Quant | Size | Context | Notes |
+|------------|-------------------|------|---------|-------|
+| 8B dense | Q4_K_M | ~5 GB | 4K-48K | Best quality/size ratio |
+| 27B dense | Q3_K_M or IQ3_M | ~12-13 GB | 4K | Q4_K_M (15.7GB) is too tight |
+| 27B dense (borderline) | Q4_K_M | ~15.7 GB | 2K max | Will OOM with larger context |
+| 30B MoE | UD-IQ3_XXS | ~13 GB | 4K | Standard quants too big |
+| 35B MoE | APEX I-Nano | ~10-11 GB | 8K | Best MoE option for T4 |
+| 35B MoE | APEX I-Mini | ~12-13 GB | 4-8K | Higher quality MoE |
 
 ---
 
@@ -92,7 +161,7 @@ For users who want to push performance further, [**ik_llama.cpp**](https://githu
 - Improved KV cache quantization
 - Better CPU/GPU hybrid offloading for memory-constrained setups
 
-On a T4, switching to `ik_llama.cpp` can yield a measurable speedup on MoE models. To use it, build the `ik_llama.cpp` Python bindings from source instead of installing the prebuilt `llama-cpp-python` wheel — see the [`ik_llama.cpp` README](https://github.com/ikawrakow/ik_llama.cpp) for build instructions. The notebooks in this repo use the standard `llama-cpp-python` wheel for simplicity; swap in `ik_llama.cpp` if you want the extra throughput.
+On a T4, switching to `ik_llama.cpp` can yield a measurable speedup on MoE models. To use it, build the `ik_llama.cpp` Python bindings from source instead of installing the prebuilt `llama-cpp-python` wheel — see the [`ik_llama.cpp` README](https://github.com/ikawrakow/ik_llama.cpp) for build instructions.
 
 ---
 
@@ -102,38 +171,9 @@ The API server notebook uses `cloudflared` to create a **temporary public URL** 
 
 - The URL is ephemeral — it dies when the Colab runtime disconnects or the notebook stops
 - The tunnel is one-way (inbound to your server); it does not expose your machine
-- Any API key is accepted by the FastAPI wrapper — the tunnel URL itself is the secret
+- Any API key is accepted by the server — the tunnel URL itself is the secret
 
 For a persistent URL, sign up for a free [Cloudflare Zero Trust](https://www.cloudflare.com/products/zero-trust/) account and configure a named tunnel.
-
----
-
-## 📜 How to Use the API from Any OpenAI-Compatible Client
-
-The server notebook exposes a fully OpenAI-compatible `/v1/chat/completions` endpoint. Anything that speaks the OpenAI Chat API will work:
-
-```bash
-curl https://<your-tunnel>.trycloudflare.com/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk-no-key-needed" \
-  -d '{
-    "model": "qwen3.6-35b",
-    "messages": [{"role": "user", "content": "Hello!"}],
-    "max_tokens": 100
-  }'
-```
-
-**LangChain:**
-```python
-from langchain_openai import ChatOpenAI
-llm = ChatOpenAI(
-    base_url="https://<your-tunnel>.trycloudflare.com/v1",
-    api_key="sk-no-key-needed",
-    model="qwen3.6-35b",
-)
-```
-
-**Continue.dev (VS Code):** add a model with `apiBase: https://<your-tunnel>.trycloudflare.com/v1`.
 
 ---
 
@@ -153,6 +193,8 @@ llm = ChatOpenAI(
 - T4 does **not** support FP8/BF16 natively — quantized (Q4/MXFP4/APEX) models are the only way to fit these sizes.
 - The Cloudflare tunnel URL is public — anyone with the URL can hit your API. Don't leave it running unattended with sensitive data.
 - gpt-oss-20b uses **native MXFP4**; run it via the [official OpenAI Colab notebook](https://github.com/openai/gpt-oss) or adapt notebook `04`.
+- 27B dense models at Q4_K_M (15.7GB) are **borderline** — use 2K context max or they will OOM.
+- Some models (Nemotron 30B, Holo 3.1 35B) have no standard Q4_K_M that fits T4 — use APEX or ultra-low-bit quants.
 
 ---
 

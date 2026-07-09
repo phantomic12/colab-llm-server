@@ -125,8 +125,14 @@ jobs:
           fi
 
       - name: Pack artifact
-        working-directory: /tmp/llama.cpp
         run: |
+          # actions/upload-artifact resolves 'path' relative to
+          # $GITHUB_WORKSPACE (the checkout dir), NOT to working-directory.
+          # We can't use a separate working-directory for this step because
+          # the tarball is in /tmp/llama.cpp/. So: build there, then copy
+          # the tarball + sha into the workspace where upload-artifact can
+          # find it.
+          cd /tmp/llama.cpp
           mkdir -p release/llama-bench/bin release/llama-bench/lib
           cp build/bin/llama-bench release/llama-bench/bin/
           # Bundle any .so files so the binary actually runs downstream.
@@ -142,7 +148,9 @@ jobs:
           EOF
           tar --zstd -cf "${{ matrix.artifact }}" -C release llama-bench
           sha256sum "${{ matrix.artifact }}" | tee "${{ matrix.artifact }}.sha256"
-          ls -la "${{ matrix.artifact }}"*
+          # Move into workspace where upload-artifact can find it.
+          cp "${{ matrix.artifact }}" "${{ matrix.artifact }}.sha256" "$GITHUB_WORKSPACE/"
+          ls -la "$GITHUB_WORKSPACE/${{ matrix.artifact }}"*
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4

@@ -45,6 +45,58 @@ If these are private repos or published under different names, please provide th
 
 ---
 
+## 📦 Pre-built `llama-bench` binaries (for fast Colab cold-starts)
+
+The `06_benchmark_suite.ipynb` notebook (and any `bench_colab_one.py` you
+run on Colab) needs a `llama-bench` binary. Building llama.cpp from source
+inside a fresh Colab VM burns ~8 min of every benchmark run. To skip that:
+
+```bash
+# In a Colab cell, after cloning this repo:
+!wget -q https://github.com/phantomic12/colab-llm-server/releases/latest/download/llama-bench-cuda-T4.tar.zst
+!tar --use-compress-program=unzstd -xf llama-bench-cuda-T4.tar.zst
+!cp llama-bench/bin/llama-bench /usr/local/bin/
+```
+
+Or pass `--prebuilt-asset cuda-T4` to `bench_colab_one.py` (see
+`phantomic12/llama-bench/scripts/bench_colab_one.py` for the
+`--prebuilt-asset` integration — it auto-resolves the latest matching asset
+via the GitHub release API).
+
+### How the binaries are produced
+
+`.github/workflows/release-binaries.yml` builds three prebuilt artifacts
+on every `v*` tag push and uploads them to GitHub Releases:
+
+| variant | use case |
+|---|---|
+| `llama-bench-cuda-T4.tar.zst`     | Colab T4 (sm_75) — also runs on most NVIDIA GPUs via PTX JIT |
+| `llama-bench-cpu-zen5.tar.zst`    | Ryzen AI 9 HX 370, native AVX-512 VNNI+VBMI+BF16 (Zen 4/5) |
+| `llama-bench-cpu-avx2.tar.zst`    | generic AVX2 x86_64 fallback |
+
+Each tarball bundles the binary plus its dependent `.so` files, plus a
+`BUILD_INFO.txt` and a `.sha256` sidecar.
+
+> **Why pin to llama.cpp b7997?** Upstream master has since dropped the
+> `llama-bench` binary entirely. b7997 (May 2025) is the last release
+> with a self-contained `tools/llama-bench` executable.
+
+### Cutting a new release
+
+```bash
+# Tag and push — GHA picks it up automatically.
+git tag -a v0.1.0 -m "release: prebuilt llama-bench binaries"
+git push origin v0.1.0
+# → watch /actions/workflows/release-binaries.yml
+# → after ~5 min the release page has 3 tarballs
+```
+
+Or use `workflow_dispatch` from the Actions tab to re-cut artifacts under
+a tag name you choose (useful for hot-fixing the build without bumping
+the version).
+
+---
+
 ## 📓 Notebooks
 
 | Notebook | Model | What it does |

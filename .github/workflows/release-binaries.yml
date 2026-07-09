@@ -1,0 +1,181 @@
+# Prebuilt llama-bench binaries for colab-llm-server.
+#
+# Why: the Colab-side `bench_colab_one.py --prebuilt-asset <name>` skips the
+# ~8 min in-VM build of llama.cpp if a prebuilt tarball is on the latest
+# GitHub release. We produce the tarballs on every v* tag push and upload
+# them to the same release via softprops/action-gh-release@v2.
+#
+# Pin: llama.cpp b7997 (May 2025). `tools/llama-bench` is the bench target
+# in that revision; later master tags dropped the binary entirely.
+#
+# Matrix:
+#   - cuda-sm75-T4  : sm_75, runs on most NVIDIA GPUs via PTX JIT
+#   - cpu-zen5-avx512: AVX-512 + VNNI + VBMI (Zen 4/5 compatible)
+#   - cpu-avx2      : generic fallback for older x86_64
+#
+# Triggered on `v*` tag push. Manual dispatch is also available for
+# re-cutting artifacts without a tag.
+
+name: Release Binaries
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag name to publish binaries under (e.g. v0.1.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write  # required for softprops/action-gh-release to upload assets
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: cuda-sm75-T4
+            artifact: llama-bench-cuda-T4.tar.zst
+            cmake_args: -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=75
+            cflags: "-O3"
+          - label: cpu-zen5-avx512
+            artifact: llama-bench-cpu-zen5.tar.zst
+            # x86-64-v3 = AVX2 + FMA + BMI. Add AVX-512 explicitly.
+            # Compatible with Zen 4 / Zen 5; we can't use -march=znver5
+            # because GHA's GCC is 11.4 (znver5 needs GCC 12+).
+            cmake_args: -DGGML_NATIVE=OFF -DGGML_CPU_ALL_VARIANTS=OFF
+            cflags: "-march=x86-64-v3 -mavx512f -mavx512vnni -mavx512vbmi -mavx512bw -mavx512dq -mavx512cd -mfma -mpopcnt -O3"
+          - label: cpu-avx2
+            artifact: llama-bench-cpu-avx2.tar.zst
+            cmake_args: -DGGML_NATIVE=OFF -DGGML_CPU_ALL_VARIANTS=OFF
+            cflags: "-march=x86-64-v2 -mavx2 -mfma -mpopcnt -O3"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake git zstd wget ca-certificates
+          # CUDA toolkit (only the cuda-* matrix entries need it).
+          if [[ "${{ matrix.label }}" == cuda-* ]]; then
+            wget -q https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+            sudo dpkg -i cuda-keyring_1.1-1_all.deb
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends cuda-toolkit-12-4
+            echo "/usr/local/cuda/bin" >> "$GITHUB_PATH"
+          fi
+
+      - name: Clone pinned llama.cpp
+        run: |
+          # b7997 (May 2025) is the last release with a self-contained
+          # `tools/llama-bench` executable. Master has since dropped the
+          # binary entirely.
+          git clone --depth 1 --branch b7997 --recursive \
+            https://github.com/ggml-org/llama.cpp.git /tmp/llama.cpp
+          cd /tmp/llama.cpp
+          echo "Pinned llama.cpp: $(git rev-parse HEAD)"
+
+      - name: Build llama-bench
+        working-directory: /tmp/llama.cpp
+        env:
+          CFLAGS: ${{ matrix.cflags }}
+          CXXFLAGS: ${{ matrix.cflags }}
+        run: |
+          # Use a fresh build dir per matrix entry to avoid stale CMakeCache.
+          rm -rf build
+          cmake -B build ${{ matrix.cmake_args }} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLLAMA_BUILD_COMMON=ON \
+            -DLLAMA_BUILD_TOOLS=ON \
+            -DLLAMA_BUILD_SERVER=OFF \
+            -DLLAMA_CURL=OFF
+          cmake --build build --config Release --target llama-bench -j"$(nproc)"
+
+      - name: Smoke-test llama-bench
+        working-directory: /tmp/llama.cpp
+        run: |
+          ./build/bin/llama-bench --version
+          ./build/bin/llama-bench --help | head -5
+
+      - name: Pack artifact
+        working-directory: /tmp/llama.cpp
+        run: |
+          mkdir -p release/llama-bench/bin release/llama-bench/lib
+          cp build/bin/llama-bench release/llama-bench/bin/
+          # Bundle any .so files so the binary actually runs downstream.
+          find . -name '*.so*' -path './build/*' \
+            -exec cp -P {} release/llama-bench/lib/ \; 2>/dev/null || true
+          cat > release/llama-bench/BUILD_INFO.txt <<EOF
+          label:        ${{ matrix.label }}
+          llama.cpp:    $(git rev-parse HEAD) (b7997)
+          built:        $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          runner:       ${{ runner.os }}
+          cmake_args:   ${{ matrix.cmake_args }}
+          cflags:       ${{ matrix.cflags }}
+          EOF
+          tar --zstd -cf "${{ matrix.artifact }}" -C release llama-bench
+          sha256sum "${{ matrix.artifact }}" | tee "${{ matrix.artifact }}.sha256"
+          ls -la "${{ matrix.artifact }}"*
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            ${{ matrix.artifact }}
+            ${{ matrix.artifact }}.sha256
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Verify tarballs + sha256
+        run: |
+          set -e
+          cd dist
+          for f in *.tar.zst; do
+            sha256sum -c "$f.sha256" || { echo "sha256 mismatch on $f"; exit 1; }
+          done
+          ls -la
+          du -sh *
+
+      - name: Resolve release tag
+        id: tag
+        run: |
+          # workflow_dispatch uses inputs.tag; tag push uses github.ref_name.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.value }}
+          name: ${{ steps.tag.outputs.value }}
+          generate_release_notes: true
+          files: |
+            dist/*.tar.zst
+            dist/*.tar.zst.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

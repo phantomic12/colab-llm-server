@@ -105,8 +105,24 @@ jobs:
       - name: Smoke-test llama-bench
         working-directory: /tmp/llama.cpp
         run: |
-          ./build/bin/llama-bench --version
-          ./build/bin/llama-bench --help | head -5
+          # llama-bench b7997 has no --version flag. Just verify the binary
+          # exists, is a valid ELF, and that --help runs without crashing.
+          test -x ./build/bin/llama-bench || { echo "binary missing or not executable"; exit 1; }
+          file ./build/bin/llama-bench
+          # CUDA binaries link against libcuda.so.1 (driver, not toolkit) and
+          # the GHA runner image has no NVIDIA driver. Set LD_LIBRARY_PATH so
+          # the linker at least resolves; if libcuda is still missing we
+          # print a warning but don't fail — the artifact will run on Colab.
+          if [[ "${{ matrix.label }}" == cuda-* ]]; then
+            export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+            if ! ldd ./build/bin/llama-bench 2>&1 | grep -q "libcuda.so.1"; then
+              echo "WARN: libcuda.so.1 not present on GHA runner (no driver); skipping --help runtime check"
+            else
+              ./build/bin/llama-bench --help | head -3
+            fi
+          else
+            ./build/bin/llama-bench --help | head -3
+          fi
 
       - name: Pack artifact
         working-directory: /tmp/llama.cpp

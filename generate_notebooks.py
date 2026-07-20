@@ -735,4 +735,21 @@ make_notebook([
     TEST_CELL,
 ], "16_qwable_ablit_27b_server.ipynb")
 
+# ============================================================
+# 17: Ternary Bonsai 27B (PrismML, 1.71-bit ternary)
+# ============================================================
+# NOTE: This notebook is manually maintained (not auto-generated)
+# because it requires building the PrismML llama.cpp fork from source
+# (ternary CUDA kernels not in upstream llama.cpp yet).
+# The notebook lives at notebooks/17_ternary_bonsai_27b_server.ipynb
+# and uses llama-server from the PrismML fork, not llama-cpp-python.
+#
+# Key differences from other notebooks:
+# - Builds PrismML-Eng/llama.cpp from source (30-45 min on T4)
+# - Uses llama-server binary directly (OpenAI-compatible HTTP API)
+# - No llama-cpp-python dependency
+# - Model: prism-ml/Ternary-Bonsai-27B-gguf (Ternary-Bonsai-27B-Q2_0.gguf, ~3.5 GB)
+# - 1.71-bit ternary {−1, 0, +1} weights of Qwen3.6-27B
+# - Only ~4 GB VRAM needed — massive headroom for 32K+ context
+
 print("\nAll notebooks generated!")

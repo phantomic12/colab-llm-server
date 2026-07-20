@@ -32,6 +32,7 @@ These models have been added with quants selected to fit the T4's 15GB VRAM:
 | 13 | **Holo 3.1 35B** | MoE 35B/3B | APEX I-Mini | 13.33 GB | 4K | H Company computer-use agent |
 | 14 | **Carwin 27B** | Dense 27B | Q4_K_M | 15.68 GB | 2K | ⚠️ Borderline — Carnice+Darwin merge |
 | 15 | **Ablit. Qwable 27B** | Dense 27B | — | — | — | ❌ No T4-fit quant available |
+| 16 | **Ternary Bonsai 27B** | Dense 27B | Ternary Q2_0 | ~3.5 GB | 32K | 🔬 PrismML 1.71-bit, custom llama.cpp fork |
 
 ### Models Not Found on HuggingFace
 
@@ -118,6 +119,7 @@ the version).
 | [`14_holo_3_1_35b_server.ipynb`](notebooks/14_holo_3_1_35b_server.ipynb) | Holo 3.1 35B | H Company computer-use agent, APEX I-Mini |
 | [`15_carwin_27b_server.ipynb`](notebooks/15_carwin_27b_server.ipynb) | Carwin 27B | Carnice+Darwin merge, Q4_K_M (borderline) |
 | [`16_qwable_ablit_27b_server.ipynb`](notebooks/16_qwable_ablit_27b_server.ipynb) | Ablit. Qwable 27B | Abliterated — ⚠️ no T4-fit quant |
+| [`17_ternary_bonsai_27b_server.ipynb`](notebooks/17_ternary_bonsai_27b_server.ipynb) | Ternary Bonsai 27B | 1.71-bit ternary, PrismML fork (builds from source, 30-45 min) |
 
 ---
 

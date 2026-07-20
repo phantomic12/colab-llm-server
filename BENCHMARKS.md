@@ -14,6 +14,7 @@ llama-cpp-python 0.3.33, CUDA backend, 150-token generation, 4096 ctx (8192 for 
 | Darwin Code 27B | Q3_K_M | 13.50 GB | 82.8s | 13,375 MiB | 8.0 | OK |
 | Carnice V2 27B | IQ3_M | 13.66 GB | 80.5s | 13,533 MiB | 7.9 | OK |
 | Qwopus v2 27B | Q3_K_M | 13.50 GB | — | — | — | Download stalled |
+| **Ternary Bonsai 27B** | **Ternary Q2_0** | **~3.5 GB** | **—** | **—** | **—** | **Not yet benchmarked** |
 
 ## Analysis
 
@@ -42,6 +43,7 @@ llama-cpp-python 0.3.33, CUDA backend, 150-token generation, 4096 ctx (8192 for 
 - **Best quality/size:** Gemma4-26B APEX I-Mini (37.6 tok/s, 13.3 GB)
 - **Best for coding:** Darwin Code 27B Q3_K_M (8.0 tok/s, 13.4 GB)
 - **Lightest:** Qwen3-8B Q4_K_M (31.3 tok/s, 5.4 GB)
+- **Most VRAM-efficient:** Ternary Bonsai 27B (~3.5 GB, 1.71-bit, custom fork)
 
 ## Models pending benchmark
 The following models from the expanded list have been added to `generate_notebooks.py`
